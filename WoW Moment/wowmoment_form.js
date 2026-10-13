@@ -1,31 +1,28 @@
-var WowMoment = WowMoment || {};
-
-WowMoment.validateEmailDomain = function (executionContext) {
+function validateEmail(executionContext) {
+ 
     var formContext = executionContext.getFormContext();
-
-    var emailAttr = formContext.getAttribute("har_emailaddress");
-    if (!emailAttr) return;
-
-    var email = emailAttr.getValue();
-
-    if (!email) {
-        formContext.getControl("har_emailaddress")
-            .clearNotification("EMAIL_DOMAIN");
-        return;
-    }
-
-    if (email.toLowerCase().endsWith("@nsquarexperts.com")) {
-
-        formContext.getControl("har_emailaddress")
-            .setNotification(
-                "Email address from @nsquarexperts.com domain is not allowed.",
-                "EMAIL_DOMAIN"
+ 
+    var email = formContext
+        .getAttribute("har_emailaddress")
+        .getValue();
+ 
+    formContext.ui.clearFormNotification("EMAIL_ERROR");
+ 
+    if (email != null) {
+ 
+        email = email.toLowerCase();
+ 
+        if (email.endsWith("@nsquarexperts.com")) {
+ 
+            formContext.ui.setFormNotification(
+                "Email address from @nsquarexperts.com is not allowed.",
+                "ERROR",
+                "EMAIL_ERROR"
             );
-
-        emailAttr.setValue(null);
+ 
+            formContext
+                .getAttribute("har_emailaddress")
+                .setValue(null);
+        }
     }
-    else {
-        formContext.getControl("har_emailaddress")
-            .clearNotification("EMAIL_DOMAIN");
-    }
-};
+}
