@@ -26,3 +26,33 @@ function validateEmail(executionContext) {
         }
     }
 }
+var formCtx;
+var selectedOccasion;
+
+function filterShopsByOccasion(executionContext) {
+
+    formCtx = executionContext.getFormContext();
+
+    selectedOccasion = formCtx
+        .getAttribute("har_occasion")
+        .getValue();
+
+    var shopControl = formCtx.getControl("har_shops");
+
+    shopControl.removePreSearch(applyShopFilter);
+    shopControl.addPreSearch(applyShopFilter);
+}
+
+function applyShopFilter() {
+
+    var filter =
+        "<filter type='and'>" +
+        "<condition attribute='har_eventsorganizedhere' " +
+        "operator='eq' " +
+        "value='" + selectedOccasion + "' />" +
+        "</filter>";
+
+    formCtx
+        .getControl("har_shops")
+        .addCustomFilter(filter, "har_shop");
+}
