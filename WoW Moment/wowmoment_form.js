@@ -169,3 +169,45 @@ function validateWowMomentDate(executionContext) {
         eventArgs.preventDefault();
     }
 }
+function validateName(executionContext) {
+
+    var formContext = executionContext.getFormContext();
+
+    var fieldName = executionContext.getEventSource().getName();
+
+    var attribute = formContext.getAttribute(fieldName);
+    var control = formContext.getControl(fieldName);
+
+    var value = attribute.getValue();
+
+    control.clearNotification("NAME_ERROR");
+
+    if (value == null || value.trim() === "") {
+        return;
+    }
+
+    value = value.trim();
+
+    var namePattern = /^[A-Za-z-]+$/;
+
+    if (value.length < 2) {
+
+        control.setNotification(
+            "Name must contain at least 2 characters.",
+            "NAME_ERROR"
+        );
+
+        attribute.setValue(null);
+        return;
+    }
+
+    if (!namePattern.test(value)) {
+
+        control.setNotification(
+            "Only alphabetic characters and hyphens are allowed.",
+            "NAME_ERROR"
+        );
+
+        attribute.setValue(null);
+    }
+}
