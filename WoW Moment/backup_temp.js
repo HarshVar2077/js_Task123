@@ -29,15 +29,6 @@ function validateEmail(executionContext) {
 var formContext;
 var selectedOccasion;
 
-function occasionOnChange(executionContext) {
-
-    formContext = executionContext.getFormContext();
-
-    formContext.getAttribute("har_shops").setValue(null);
-
-    filterShopsByOccasion(executionContext);
-}
-
 function filterShopsByOccasion(executionContext) {
 
     formContext = executionContext.getFormContext();
@@ -68,7 +59,6 @@ function filterShopsByOccasion(executionContext) {
 }
 
 function applyShopFilter() {
-    debugger;
     console.log("applyShopFilter fired");
 
 
@@ -209,5 +199,33 @@ function validateName(executionContext) {
         );
 
         attribute.setValue(null);
+    }
+}
+function validateMobileNumber(executionContext) {
+
+    var formContext = executionContext.getFormContext();
+
+    var mobileAttribute = formContext.getAttribute("har_mobilenumber");
+    var mobileControl = formContext.getControl("har_mobilenumber");
+
+    var mobileNumber = mobileAttribute.getValue();
+
+    mobileControl.clearNotification("MOBILE_ERROR");
+
+    if (mobileNumber == null || mobileNumber.trim() === "") {
+        return;
+    }
+
+    mobileNumber = mobileNumber.trim();
+
+    var mobilePattern = /^\+91\d{10}$/;
+
+    if (!mobilePattern.test(mobileNumber)) {
+        mobileAttribute.setValue(null);
+        mobileControl.setNotification(
+            "Mobile Number must start with +91 and contain exactly 10 digits.",
+            "MOBILE_ERROR"
+        );
+
     }
 }
