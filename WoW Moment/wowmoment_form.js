@@ -136,3 +136,36 @@ function lockFieldsAfterSubmission(executionContext) {
         formContext.getControl("har_shops").setDisabled(true);
     }
 }
+function validateWowMomentDate(executionContext) {
+
+    var formContext = executionContext.getFormContext();
+    var eventArgs = executionContext.getEventArgs();
+
+    var wowMomentDate = formContext
+        .getAttribute("har_wowmomentdate")
+        .getValue();
+    if (wowMomentDate == null) {
+        return;
+    }
+
+    var today = new Date();
+
+    var minDate = new Date(today);
+    minDate.setDate(today.getDate() - 2);
+
+    var maxDate = new Date(today);
+    maxDate.setDate(today.getDate() + 180);
+
+    formContext.ui.clearFormNotification("DATE_ERROR");
+
+    if (wowMomentDate < minDate || wowMomentDate > maxDate) {
+
+        formContext.ui.setFormNotification(
+            "Wow Moment Date must be within 2 days before today and 180 days after today.",
+            "ERROR",
+            "DATE_ERROR"
+        );
+
+        eventArgs.preventDefault();
+    }
+}
