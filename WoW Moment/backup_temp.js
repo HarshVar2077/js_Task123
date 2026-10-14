@@ -1,25 +1,25 @@
 function validateEmail(executionContext) {
- 
+
     var formContext = executionContext.getFormContext();
- 
+
     var email = formContext
         .getAttribute("har_emailaddress")
         .getValue();
- 
+
     formContext.ui.clearFormNotification("EMAIL_ERROR");
- 
+
     if (email != null) {
- 
+
         email = email.toLowerCase();
- 
+
         if (email.endsWith("@nsquarexperts.com")) {
- 
+
             formContext.ui.setFormNotification(
                 "Email address from @nsquarexperts.com is not allowed.",
                 "ERROR",
                 "EMAIL_ERROR"
             );
- 
+
             formContext
                 .getAttribute("har_emailaddress")
                 .setValue(null);
@@ -53,7 +53,7 @@ function filterShopsByOccasion(executionContext) {
 
     shopControl.removePreSearch(applyShopFilter);
 
-     console.log("PreSearch added");
+    console.log("PreSearch added");
 
     if (selectedOccasion == null) {
 
@@ -68,7 +68,7 @@ function filterShopsByOccasion(executionContext) {
 }
 
 function applyShopFilter() {
-        debugger;
+    debugger;
     console.log("applyShopFilter fired");
 
 
@@ -92,7 +92,6 @@ function toggleSpouseName(executionContext) {
     var spouseField = formContext.getControl("har_spousename");
     var spouseAttribute = formContext.getAttribute("har_spousename");
 
-    // Replace with the actual Wedding Shoot option value
     var weddingShootValue = 666660002;
 
     if (occasion == weddingShootValue) {
@@ -105,5 +104,35 @@ function toggleSpouseName(executionContext) {
         spouseAttribute.setValue(null);
         spouseAttribute.setRequiredLevel("none");
         spouseField.setVisible(false);
+    }
+}
+function lockFieldsAfterSubmission(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var statusAttribute = formContext.getAttribute("har_managementapproval");
+
+    if (statusAttribute == null) {
+        return;
+    }
+
+    var status = statusAttribute.getValue();
+
+    var initiated = 666660000;
+    var approved = 666660001;
+    var rejected = 666660002;
+
+    if (
+        status == initiated ||
+        status == approved ||
+        status == rejected
+    ) {
+
+        formContext.getControl("har_title").setDisabled(true);
+        formContext.getControl("har_firstname").setDisabled(true);
+        formContext.getControl("har_lastname").setDisabled(true);
+        formContext.getControl("har_emailaddress").setDisabled(true);
+        formContext.getControl("har_mobilenumber").setDisabled(true);
+        formContext.getControl("har_wowmomentdate").setDisabled(true);
+        formContext.getControl("har_occasion").setDisabled(true);
+        formContext.getControl("har_shops").setDisabled(true);
     }
 }
