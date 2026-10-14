@@ -26,24 +26,51 @@ function validateEmail(executionContext) {
         }
     }
 }
-var formCtx;
+var formContext;
 var selectedOccasion;
+
+function occasionOnChange(executionContext) {
+
+    formContext = executionContext.getFormContext();
+
+    formContext.getAttribute("har_shops").setValue(null);
+
+    filterShopsByOccasion(executionContext);
+}
 
 function filterShopsByOccasion(executionContext) {
 
-    formCtx = executionContext.getFormContext();
+    formContext = executionContext.getFormContext();
+    console.log("filterShopsByOccasion fired");
 
-    selectedOccasion = formCtx
+    selectedOccasion = formContext
         .getAttribute("har_occasion")
         .getValue();
 
-    var shopControl = formCtx.getControl("har_shops");
+    var shopControl = formContext.getControl("har_shops");
+    console.log(shopControl);
+    console.log(shopControl.getControlType());
 
     shopControl.removePreSearch(applyShopFilter);
+
+     console.log("PreSearch added");
+
+    if (selectedOccasion == null) {
+
+        formContext.getAttribute("har_shops").setValue(null);
+        shopControl.setDisabled(true);
+
+        return;
+    }
+
+    shopControl.setDisabled(false);
     shopControl.addPreSearch(applyShopFilter);
 }
 
 function applyShopFilter() {
+        debugger;
+    console.log("applyShopFilter fired");
+
 
     var filter =
         "<filter type='and'>" +
@@ -52,7 +79,31 @@ function applyShopFilter() {
         "value='" + selectedOccasion + "' />" +
         "</filter>";
 
-    formCtx
+    formContext
         .getControl("har_shops")
         .addCustomFilter(filter, "har_shop");
+}
+function toggleSpouseName(executionContext) {
+
+    var formContext = executionContext.getFormContext();
+
+    var occasion = formContext.getAttribute("har_occasion").getValue();
+
+    var spouseField = formContext.getControl("har_spousename");
+    var spouseAttribute = formContext.getAttribute("har_spousename");
+
+    // Replace with the actual Wedding Shoot option value
+    var weddingShootValue = 666660002;
+
+    if (occasion == weddingShootValue) {
+
+        spouseField.setVisible(true);
+        spouseAttribute.setRequiredLevel("required");
+    }
+    else {
+
+        spouseAttribute.setValue(null);
+        spouseAttribute.setRequiredLevel("none");
+        spouseField.setVisible(false);
+    }
 }
