@@ -271,3 +271,64 @@ function populateAgentDetails(executionContext) {
         }
     );
 }
+function createOrAssociateContact(executionContext) {
+    var formContext = executionContext.getFormContext();
+
+    var firstName = formContext.getAttribute("har_firstname").getValue();
+    var lastName = formContext.getAttribute("har_lastname").getValue();
+    var email = formContext.getAttribute("har_emailaddress").getValue();
+    var mobile = formContext.getAttribute("har_mobilenumber").getValue();
+
+
+    Xrm.WebApi.retrieveMultipleRecords(
+        "contact",
+        "?$select=contactid,fullname&$filter=emailaddress1 eq '" + email + "'"
+    ).then(
+        function success(result) {
+
+            if (result.entities.length > 0) {
+
+                var existingContact = result.entities[0];
+
+                formContext.getAttribute("har_contact").setValue([
+                    {
+                        id: existingContact.contactid,
+                        name: existingContact.fullname,
+                        entityType: "contact"
+                    }
+                ]);
+
+            } else {
+
+                var contactData = {
+                    firstname: firstName,
+                    lastname: lastName,
+                    emailaddress1: email,
+                    mobilephone: mobile
+                };
+
+                Xrm.WebApi.createRecord("contact", contactData).then(
+                    function success(createdResult) {
+
+                        var fullName =
+                            (firstName || "") +" "+(lastName || "");
+
+                        formContext.getAttribute("har_contact").setValue([
+                            {
+                                id: createdResult.id,
+                                name: fullName.trim(),
+                                entityType: "contact"
+                            }
+                        ]);
+                    },
+                    function (error) {
+                        alert(error.message);
+                    }
+                );
+            }
+        },
+        function error(error) {
+            alert(error.message);
+        }
+    );
+}
