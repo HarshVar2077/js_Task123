@@ -229,3 +229,45 @@ function validateMobileNumber(executionContext) {
 
     }
 }
+function managementApprovalOnChange(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var statusAttribute = formContext.getAttribute("har_managementapproval");
+
+    if (statusAttribute == null) {
+        return;
+    }
+    var status = statusAttribute.getValue();
+    var rejected = 666660002;
+    var rejectionRemarks = formContext.getAttribute("har_rejectionremarks");
+    if (status == rejected) {
+        rejectionRemarks.setRequiredLevel("required");
+
+}else {
+        rejectionRemarks.setRequiredLevel("none");
+}
+}
+function populateAgentDetails(executionContext) {
+    var formContext = executionContext.getFormContext();
+
+    // Run only on Create form
+    if (formContext.ui.getFormType() !== 1) {
+        return;
+    }
+
+    // Get current user ID and remove {}
+    var userId = Xrm.Utility.getGlobalContext().userSettings.userId.replace(/[{}]/g, "");
+
+    Xrm.WebApi.retrieveRecord(
+        "systemuser",
+        userId,
+        "?$select=fullname,internalemailaddress"
+    ).then(
+        function success(result) {
+            formContext.getAttribute("har_agentname").setValue(result.fullname);
+            formContext.getAttribute("har_agentemail").setValue(result.internalemailaddress);
+        },
+        function error(error) {
+            console.log(error.message);
+        }
+    );
+}

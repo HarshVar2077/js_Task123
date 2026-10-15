@@ -246,3 +246,28 @@ function managementApprovalOnChange(executionContext) {
         rejectionRemarks.setRequiredLevel("none");
 }
 }
+function populateAgentDetails(executionContext) {
+    var formContext = executionContext.getFormContext();
+
+    // Run only on Create form
+    if (formContext.ui.getFormType() !== 1) {
+        return;
+    }
+
+    // Get current user ID and remove {}
+    var userId = Xrm.Utility.getGlobalContext().userSettings.userId.replace(/[{}]/g, "");
+
+    Xrm.WebApi.retrieveRecord(
+        "systemuser",
+        userId,
+        "?$select=fullname,internalemailaddress"
+    ).then(
+        function success(result) {
+            formContext.getAttribute("har_agentname").setValue(result.fullname);
+            formContext.getAttribute("har_agentemail").setValue(result.internalemailaddress);
+        },
+        function error(error) {
+            console.log(error.message);
+        }
+    );
+}
