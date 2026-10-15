@@ -332,3 +332,71 @@ function createOrAssociateContact(executionContext) {
         }
     );
 }
+function validateDuplicateWowMoment(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var eventArgs = executionContext.getEventArgs();
+
+    var email = formContext.getAttribute("har_emailaddress").getValue();
+    var occasion = formContext.getAttribute("har_occasion").getValue();
+    var wowMomentDate = formContext.getAttribute("har_wowmomentdate").getValue();
+
+    if (!email || occasion === null || !wowMomentDate) {
+        return;
+    }
+
+    eventArgs.preventDefault();
+
+    var currentRecordId = formContext.data.entity.getId().replace(/[{}]/g, "");
+
+    var dateOnly = wowMomentDate.toISOString().split("T")[0];
+
+    var query =
+        "?$select=har_wowmomentid,har_wowmomentdate" +
+        "&$filter=har_emailaddress eq '" + email + "'" +
+        " and har_occasion eq " + occasion;
+
+    Xrm.WebApi.retrieveMultipleRecords("har_wowmoment", query).then(
+        function success(result) {
+
+            var duplicateFound = false;
+
+            for (var i = 0; i < result.entities.length; i++) {
+
+                var record = result.entities[i];
+
+                if (
+                    record.har_wowmomentid.toLowerCase() ===
+                    currentRecordId.toLowerCase()
+                ) {
+                    continue;
+                }
+
+                if (!record.har_wowmomentdate) {
+                    continue;
+                }
+
+                var existingDate =
+                    new Date(record.har_wowmomentdate)
+                        .toISOString()
+                        .split("T")[0];
+
+                if (existingDate === dateOnly) {
+                    duplicateFound = true;
+                    break;
+                }
+            }
+
+            if (duplicateFound) {
+                alert(
+                    "A Wow Moment record already exists with the same Email Address, Occasion and Wow Moment Date."
+                );
+            }
+            else {
+                formContext.data.save();
+            }
+        },
+        function error(error) {
+            alert(error.message);
+        }
+    );
+}
