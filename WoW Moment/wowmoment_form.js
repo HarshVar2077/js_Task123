@@ -246,6 +246,7 @@ function managementApprovalOnChange(executionContext) {
         rejectionRemarks.setRequiredLevel("none");
 }
 }
+//phase 2 validations
 function populateAgentDetails(executionContext) {
     var formContext = executionContext.getFormContext();
 
@@ -254,7 +255,6 @@ function populateAgentDetails(executionContext) {
         return;
     }
 
-    // Get current user ID and remove {}
     var userId = Xrm.Utility.getGlobalContext().userSettings.userId.replace(/[{}]/g, "");
 
     Xrm.WebApi.retrieveRecord(
