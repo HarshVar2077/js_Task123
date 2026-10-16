@@ -1,3 +1,4 @@
+var isResaving = false;
 function validateEmail(executionContext) {
 
     var formContext = executionContext.getFormContext();
@@ -304,7 +305,8 @@ function createOrAssociateContact(executionContext) {
                     firstname: firstName,
                     lastname: lastName,
                     emailaddress1: email,
-                    mobilephone: mobile
+                    mobilephone: mobile,
+                    telephone1: mobile
                 };
 
                 Xrm.WebApi.createRecord("contact", contactData).then(
@@ -332,7 +334,13 @@ function createOrAssociateContact(executionContext) {
         }
     );
 }
-function validateDuplicateWowMoment(executionContext) {
+function saveWowMoment(executionContext) {
+
+    if (isResaving) {
+        isResaving = false;
+        return;
+    }
+
     var formContext = executionContext.getFormContext();
     var eventArgs = executionContext.getEventArgs();
 
@@ -346,7 +354,11 @@ function validateDuplicateWowMoment(executionContext) {
 
     eventArgs.preventDefault();
 
-    var currentRecordId = formContext.data.entity.getId().replace(/[{}]/g, "");
+    var currentRecordId = formContext.data.entity.getId();
+
+    if (currentRecordId) {
+        currentRecordId = currentRecordId.replace(/[{}]/g, "").toLowerCase();
+    }
 
     var dateOnly = wowMomentDate.toISOString().split("T")[0];
 
@@ -355,7 +367,10 @@ function validateDuplicateWowMoment(executionContext) {
         "&$filter=har_emailaddress eq '" + email + "'" +
         " and har_occasion eq " + occasion;
 
-    Xrm.WebApi.retrieveMultipleRecords("har_wowmoment", query).then(
+    Xrm.WebApi.retrieveMultipleRecords(
+        "har_wowmoment",
+        query
+    ).then(
         function success(result) {
 
             var duplicateFound = false;
@@ -365,8 +380,8 @@ function validateDuplicateWowMoment(executionContext) {
                 var record = result.entities[i];
 
                 if (
-                    record.har_wowmomentid.toLowerCase() ===
-                    currentRecordId.toLowerCase()
+                    currentRecordId &&
+                    record.har_wowmomentid.toLowerCase() === currentRecordId
                 ) {
                     continue;
                 }
@@ -387,13 +402,49 @@ function validateDuplicateWowMoment(executionContext) {
             }
 
             if (duplicateFound) {
+
                 alert(
                     "A Wow Moment record already exists with the same Email Address, Occasion and Wow Moment Date."
                 );
+
+                return;
             }
-            else {
+
+            var contactLookup =
+                formContext.getAttribute("har_contact").getValue();
+
+            if (!contactLookup) {
+
+                isResaving = true;
                 formContext.data.save();
+                return;
             }
+
+            var contactId =
+                contactLookup[0].id.replace(/[{}]/g, "");
+
+            var contactData = {
+                firstname: formContext.getAttribute("har_firstname").getValue(),
+                lastname: formContext.getAttribute("har_lastname").getValue(),
+                emailaddress1: email,
+                mobilephone: formContext.getAttribute("har_mobilenumber").getValue()
+            };
+
+            Xrm.WebApi.updateRecord(
+                "contact",
+                contactId,
+                contactData
+            ).then(
+                function updateSuccess() {
+
+                    isResaving = true;
+                    formContext.data.save();
+
+                },
+                function error(error) {
+                    alert(error.message);
+                }
+            );
         },
         function error(error) {
             alert(error.message);

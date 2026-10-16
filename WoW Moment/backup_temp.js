@@ -1,3 +1,4 @@
+var isResaving = false;
 function validateEmail(executionContext) {
 
     var formContext = executionContext.getFormContext();
@@ -304,7 +305,8 @@ function createOrAssociateContact(executionContext) {
                     firstname: firstName,
                     lastname: lastName,
                     emailaddress1: email,
-                    mobilephone: mobile
+                    mobilephone: mobile,
+                    telephone1: mobile
                 };
 
                 Xrm.WebApi.createRecord("contact", contactData).then(
@@ -326,6 +328,123 @@ function createOrAssociateContact(executionContext) {
                     }
                 );
             }
+        },
+        function error(error) {
+            alert(error.message);
+        }
+    );
+}
+function saveWowMoment(executionContext) {
+
+    if (isResaving) {
+        isResaving = false;
+        return;
+    }
+
+    var formContext = executionContext.getFormContext();
+    var eventArgs = executionContext.getEventArgs();
+
+    var email = formContext.getAttribute("har_emailaddress").getValue();
+    var occasion = formContext.getAttribute("har_occasion").getValue();
+    var wowMomentDate = formContext.getAttribute("har_wowmomentdate").getValue();
+
+    if (!email || occasion === null || !wowMomentDate) {
+        return;
+    }
+
+    eventArgs.preventDefault();
+
+    var currentRecordId = formContext.data.entity.getId();
+
+    if (currentRecordId) {
+        currentRecordId = currentRecordId.replace(/[{}]/g, "").toLowerCase();
+    }
+
+    var dateOnly = wowMomentDate.toISOString().split("T")[0];
+
+    var query =
+        "?$select=har_wowmomentid,har_wowmomentdate" +
+        "&$filter=har_emailaddress eq '" + email + "'" +
+        " and har_occasion eq " + occasion;
+
+    Xrm.WebApi.retrieveMultipleRecords(
+        "har_wowmoment",
+        query
+    ).then(
+        function success(result) {
+
+            var duplicateFound = false;
+
+            for (var i = 0; i < result.entities.length; i++) {
+
+                var record = result.entities[i];
+
+                if (
+                    currentRecordId &&
+                    record.har_wowmomentid.toLowerCase() === currentRecordId
+                ) {
+                    continue;
+                }
+
+                if (!record.har_wowmomentdate) {
+                    continue;
+                }
+
+                var existingDate =
+                    new Date(record.har_wowmomentdate)
+                        .toISOString()
+                        .split("T")[0];
+
+                if (existingDate === dateOnly) {
+                    duplicateFound = true;
+                    break;
+                }
+            }
+
+            if (duplicateFound) {
+
+                alert(
+                    "A Wow Moment record already exists with the same Email Address, Occasion and Wow Moment Date."
+                );
+
+                return;
+            }
+
+            var contactLookup =
+                formContext.getAttribute("har_contact").getValue();
+
+            if (!contactLookup) {
+
+                isResaving = true;
+                formContext.data.save();
+                return;
+            }
+
+            var contactId =
+                contactLookup[0].id.replace(/[{}]/g, "");
+
+            var contactData = {
+                firstname: formContext.getAttribute("har_firstname").getValue(),
+                lastname: formContext.getAttribute("har_lastname").getValue(),
+                emailaddress1: email,
+                mobilephone: formContext.getAttribute("har_mobilenumber").getValue()
+            };
+
+            Xrm.WebApi.updateRecord(
+                "contact",
+                contactId,
+                contactData
+            ).then(
+                function updateSuccess() {
+
+                    isResaving = true;
+                    formContext.data.save();
+
+                },
+                function error(error) {
+                    alert(error.message);
+                }
+            );
         },
         function error(error) {
             alert(error.message);
