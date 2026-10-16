@@ -451,3 +451,42 @@ function saveWowMoment(executionContext) {
         }
     );
 }
+function validateFutureEvents(executionContext) {
+
+    var formContext = executionContext.getFormContext();
+
+    var shopLookup = formContext.getAttribute("har_shops").getValue();
+
+    if (!shopLookup) {
+        return;
+    }
+
+    var shopId = shopLookup[0].id.replace(/[{}]/g, "");
+
+    var currentDateTime = new Date().toISOString();
+
+    var query =
+        "?$select=har_wowmomentid" +
+        "&$filter=_har_shops_value eq " + shopId +
+        " and har_wowmomentdate gt " + currentDateTime;
+
+    Xrm.WebApi.retrieveMultipleRecords(
+        "har_wowmoment",
+        query
+    ).then(
+        function success(result) {
+
+            if (result.entities.length >= 20) {
+
+                alert(
+                    "This shop already has 20 future events scheduled. Please select another shop."
+                );
+
+                formContext.getAttribute("har_shops").setValue(null);
+            }
+        },
+        function error(error) {
+            alert(error.message);
+        }
+    );
+}
