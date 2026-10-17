@@ -490,3 +490,78 @@ function validateFutureEvents(executionContext) {
         }
     );
 }
+function validateUniqueEmail(executionContext) {
+
+    if (isResaving) {
+        isResaving = false;
+        return;
+    }
+
+    var formContext = executionContext.getFormContext();
+    var eventArgs = executionContext.getEventArgs();
+    if (formContext.ui.getFormType() !== 1) {
+        return;
+    }
+    var email = formContext.getAttribute("har_emailaddress").getValue();
+
+    if (!email) {
+        return;
+    }
+
+    eventArgs.preventDefault();
+
+    var currentRecordId = formContext.data.entity.getId();
+
+    if (currentRecordId) {
+        currentRecordId = currentRecordId.replace(/[{}]/g, "").toLowerCase();
+    }
+
+    var query =
+        "?$select=har_wowmomentid,statecode,har_managementapproval" +
+        "&$filter=har_emailaddress eq '" + email + "'";
+
+    Xrm.WebApi.retrieveMultipleRecords(
+        "har_wowmoment",
+        query
+    ).then(
+        function success(result) {
+
+            var duplicateFound = false;
+
+            for (var i = 0; i < result.entities.length; i++) {
+
+                var record = result.entities[i];
+
+                if (
+                    currentRecordId &&
+                    record.har_wowmomentid.toLowerCase() === currentRecordId
+                ) {
+                    continue;
+                }
+
+                var isActive = record.statecode === 0;
+                var isApproved = record.har_managementapproval === 666660001;
+
+                if (isActive || isApproved) {
+                    duplicateFound = true;
+                    break;
+                }
+            }
+
+            if (duplicateFound) {
+
+                alert(
+                    "An Active or Approved Wow Moment record already exists for this Email Address."
+                );
+
+            } else {
+
+                isResaving = true;
+                formContext.data.save();
+            }
+        },
+        function error(error) {
+            alert(error.message);
+        }
+    );
+}
